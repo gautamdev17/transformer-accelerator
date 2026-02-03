@@ -101,3 +101,9 @@ output:
 (batch, seq_len, d_model)*√d_model
 '''
 
+
+'''
+STAGE 2 - POSITIONAL ENCODING
+[I, love, you]
+[you, love, I]
+'''
