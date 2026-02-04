@@ -232,16 +232,16 @@ class MultiHeadAttentionBlock(nn.Module):
 
     def __init__(self, d_model: int, h: int, dropout: float) -> None:
         super().__init__()
-        self.d_model = d_model # Embedding vector size
-        self.h = h # Number of heads
-        # Make sure d_model is divisible by h
+        self.d_model = d_model#each vector size
+        self.h = h#no, if heads
+        # d_model must be divisible by h, since we split d_model into h heads
         assert d_model % h == 0, "d_model is not divisible by h"
 
-        self.d_k = d_model // h # Dimension of vector seen by each head
-        self.w_q = nn.Linear(d_model, d_model, bias=False) # Wq
-        self.w_k = nn.Linear(d_model, d_model, bias=False) # Wk
-        self.w_v = nn.Linear(d_model, d_model, bias=False) # Wv
-        self.w_o = nn.Linear(d_model, d_model, bias=False) # Wo
+        self.d_k = d_model // h #dim of vector of each token seen by each head
+        self.w_q = nn.Linear(d_model, d_model, bias=False)#Wq-->query weight matrix
+        self.w_k = nn.Linear(d_model, d_model, bias=False)#Wk-->key weight matrix
+        self.w_v = nn.Linear(d_model, d_model, bias=False)#Wv-->value weight matrix
+        self.w_o = nn.Linear(d_model, d_model, bias=False)#Wo-->output weight matrix(final fusion of all heads)
         self.dropout = nn.Dropout(dropout)
 
     @staticmethod
