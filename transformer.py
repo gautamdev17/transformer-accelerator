@@ -106,4 +106,53 @@ output:
 STAGE 2 - POSITIONAL ENCODING
 [I, love, you]
 [you, love, I]
+so positions matter
+the idea: each position gets a unique waveform added to the embedding
+why not just give each position a unique vector?
+1. generalization to longer sequences
+2. smooth gradients
+3. extrapolation to unseen positions
+This block adds unique positional encodings to token embeddings based on sine 
+and cosine functions to inject order information into the model.
+
+
+positional encoding must enable the model to learn:
+token at position i is k steps away from token at position j
+
+so we encode positions using sine and cosine waves of different frequencies
+PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
+pos = token position (0 to seq_len-1)
+i = dimension index (0 to d_model-1)
+d_model = embedding dimension (512, 1024, etc.)
+
+for each token u get a d_model-dimensional vector(512-dim, 1024-dim, etc.)
+positional encoding also produces a (batch, seq_len, d_model) tensor
+index i refers to the index within the d_model dimension
+
+small i: slow osscillations
+large i: fast osscillations
+[ sin(slow), cos(slow), sin(medium), cos(medium), sin(fast), cos(fast), ... ]
+
+from input embeds we get (no. of sentences, no. of tokens, no. of dims per token)
+so, 
+input: (batch, seq_len, d_model)
+output: (batch, seq_len, d_model) + positional encodings(batch, seq_len, d_model)
 '''
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, seq_len: int, dropout: float):
+        super().__init__()
+    pe = torch.zeros(seq_len, d_model)#for every position, we will have a d_model-dimensional positional encoding
+    position = torch.arange(0, seq_len).unsqueeze(1) # shape (seq_len, 1), this is pos
+    div_term = torch.exp(
+    torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
+    )
+    pe[:, 0::2] = torch.sin(position * div_term)
+    pe[:, 1::2] = torch.cos(position * div_term)
+    pe = pe.unsqueeze(0)
+    self.register_buffer("pe", pe)
+
+    def forward(self, x):
+        # finally add positional encodings to input embeddings
+        x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False) #pe no need training since it has formula defined above
+        return self.dropout(x) 
