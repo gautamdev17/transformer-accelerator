@@ -146,13 +146,32 @@ class PositionalEncoding(nn.Module):
     position = torch.arange(0, seq_len).unsqueeze(1) # shape (seq_len, 1), this is pos
     div_term = torch.exp(
     torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
-    )
-    pe[:, 0::2] = torch.sin(position * div_term)
-    pe[:, 1::2] = torch.cos(position * div_term)
+    ) # implements 1/10000^(2i/d_model)
+    pe[:, 0::2] = torch.sin(position * div_term) # even indices
+    pe[:, 1::2] = torch.cos(position * div_term) # odd indices
     pe = pe.unsqueeze(0)
     self.register_buffer("pe", pe)
 
     def forward(self, x):
         # finally add positional encodings to input embeddings
         x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False) #pe no need training since it has formula defined above
-        return self.dropout(x) 
+        return self.dropout(x) # for regularization of input embeds + positional encodings
+    
+'''
+STAGE 3: MULTI-HEAD ATTENTION MECHANISM
+
+'''
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model: int, num_heads: int, dropout: float):
+        super().__init__()
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+
+        self.q_linear = nn.Linear(d_model, d_model)
+        self.k_linear = nn.Linear(d_model, d_model)
+        self.v_linear = nn.Linear(d_model, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.out_linear = nn.Linear(d_model, d_model)
