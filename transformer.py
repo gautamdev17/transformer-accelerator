@@ -167,14 +167,56 @@ so we need context aware vectors
 input: (batch, seq_len, d_model) (static + positional)
 output: (batch, seq_len, d_model) (context aware)
 
-1. Q, K, V (the three pillars of attention)
+STEP 1. Q, K, V (the three pillars of attention)
 we create 3 different linear projections of the input embeddings + positional encodings
 For every token embedding, we generate:
 Q = x · Wq
 K = x · Wk
 V = x · Wv
 Wq,Wk,Wv are learned weight matrices of shape (d_model, d_model)
-matrix math: x is (batch, seq_len, d_model), Wq is (d_model, d_model), Q is (batch, seq_len, d_model)
+x is (batch, seq_len, d_model)xWq(d_model, d_model) = Q(batch, seq_len, d_model)
+Wq, Wk, Wv are trainable matrices.
+Purpose:
+- Q: what this token is looking for
+- K: what this token offers
+- V: information carried by this token
+
+STEP 2. MULTI HEADS: SPLIT INTO MULTIPLE HEADS
+
+We split Q, K, V into h heads to allow the model to attend to different aspects of the relationships between tokens.
+d_model is split into h heads, so each head sees a d_k = d_model/h dimensional view of the data.
+This allows the model to capture different types of relationships between tokens in parallel.
+
+d_k = d_model/h
+
+Each head:
+- sees ALL tokens
+- but only a SLICE of each token’s embedding, it sees d_k dimensions instead of d_model dimensions
+
+STEP 3. ATTENTION CALCULATION
+For each head, we calculate attention scores using the formula: (this is from the paper)
+Attention(Q, K, V) = softmax((Q · K^T) / sqrt (d_k)) · V
+
+The dot product QK^T computes how strongly each token should attend to every other token.
+Dividing by sqrt(d_k) keeps the scores numerically stable and prevents gradient issues during training.
+Softmax converts these scores into attention weights that sum to 1 across the sequence.
+These weights are then used to take a weighted sum of the value vectors V, producing the output of the attention head.
+
+STEP 4. MERGE HEADS
+Concatenate outputs from all heads:
+(batch, h, seq_len, d_k)
+→ (batch, seq_len, d_model)
+
+This recombines different perspectives.
+
+STEP 5. FINAL LINEAR PROJECTION
+Apply Wo: output = concat_heads · Wo
+
+Purpose:
+- mix information across heads
+- produce final context-aware token embeddings
+
+OUTPUT:
 
 '''
 
