@@ -160,6 +160,21 @@ class PositionalEncoding(nn.Module):
 '''
 STAGE 3: MULTI-HEAD ATTENTION MECHANISM
 
+see now we have static embeds + positional encodings
+but they are static, they dont know relationships between tokens
+so we need context aware vectors
+
+input: (batch, seq_len, d_model) (static + positional)
+output: (batch, seq_len, d_model) (context aware)
+
+1. Q, K, V (the three pillars of attention)
+we create 3 different linear projections of the input embeddings + positional encodings
+For every token embedding, we generate:
+Q = x · Wq
+K = x · Wk
+V = x · Wv
+Wq,Wk,Wv are learned weight matrices of shape (d_model, d_model)
+matrix math: x is (batch, seq_len, d_model), Wq is (d_model, d_model), Q is (batch, seq_len, d_model)
 
 '''
 
