@@ -160,18 +160,20 @@ class PositionalEncoding(nn.Module):
 '''
 STAGE 3: MULTI-HEAD ATTENTION MECHANISM
 
+
 '''
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, dropout: float):
+    def __init__(self, d_model: int, h: int, dropout: float) -> None:
         super().__init__()
-        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
-        self.d_model = d_model
-        self.num_heads = num_heads
-        self.d_k = d_model // num_heads
+        self.d_model = d_model #size of token embedding
+        self.h = h #no. of heads=>each "head" = one view of relationships between tokens
 
-        self.q_linear = nn.Linear(d_model, d_model)
-        self.k_linear = nn.Linear(d_model, d_model)
-        self.v_linear = nn.Linear(d_model, d_model)
+        assert d_model % h == 0, "d_model is not divisible by h"
+
+        self.d_k = d_model // h # Dimension of vector seen by each head
+        self.w_q = nn.Linear(d_model, d_model, bias=False) # Wq
+        self.w_k = nn.Linear(d_model, d_model, bias=False) # Wk
+        self.w_v = nn.Linear(d_model, d_model, bias=False) # Wv
+        self.w_o = nn.Linear(d_model, d_model, bias=False) # Wo
         self.dropout = nn.Dropout(dropout)
-        self.out_linear = nn.Linear(d_model, d_model)
