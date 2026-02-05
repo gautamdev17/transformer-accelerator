@@ -69,7 +69,7 @@ STAGE 1: INPUT EMBEDDINGS AND POSITIONAL ENCODING
 input embeddings:
 transformers need to convert token ids to static embeddings
 
-(b,s) -> embedding lookup -> (b,s,d) 
+(b,s) -> embedding lookup -> (b,s,d)
 ex: (2,5) -> (2,5,512) gets all token embeddings for 2 sentences of 5 tokens each
 
 this block converts token ids to embeddings
@@ -246,8 +246,8 @@ class MultiHeadAttentionBlock(nn.Module):
 
     @staticmethod
     def attention(query, key, value, mask, dropout: nn.Dropout):
+        #applying the formula from the paper: attention(q,k,v)=softmax((qk^T)/sqrt(d_k))v
         d_k = query.shape[-1]
-        # Just apply the formula from the paper
         # (batch, h, seq_len, d_k) --> (batch, h, seq_len, seq_len)
         attention_scores = (query @ key.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
