@@ -286,3 +286,9 @@ class MultiHeadAttentionBlock(nn.Module):
         # Multiply by Wo
         # (batch, seq_len, d_model) --> (batch, seq_len, d_model)  
         return self.w_o(x)
+
+'''
+GEneral Matrix Multiplication is over(GEMMs), now we have context aware token embeddings
+these only dominate power,latency, and memory in the transformer, so we will optimize these heavily in the accelerator
+
+'''
