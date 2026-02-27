@@ -2,23 +2,43 @@ import torch
 import torch.nn as nn
 import math
 
+'''
+B = batch size (no. of sentences)
+S = sequence length (length of each sentence)
+D = dimension of each vector (length of each word(token))
+'''
 
-# -----------------------------
-# Input Embedding
-# -----------------------------
+# 1. input embeds
+
+'''
+x enters as a (2,20) tensor, after embedding lookup it becomes (2,20,512)
+'''
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model, vocab_size):
         super().__init__()
-        self.embedding = nn.Embedding(vocab_size, d_model)
+        self.embedding = nn.Embedding(vocab_size, d_model) #create a map from the dict
         self.d_model = d_model
 
     def forward(self, x):
         return self.embedding(x) * math.sqrt(self.d_model)
+        ''' in the attention paper it was cited: In the embedding layers, we multiply those weights by
+        √dmodel, for stability
+        embedding shape: (batch size, sequence lenght, dimension(of each vector))
+        also refered to harvard nlp annotated transformer
+        
+        before scaling: (B,S,D)
+        after scaling: (B,S,D)
+        '''
 
 
-# -----------------------------
-# Positional Encoding
-# -----------------------------
+# 2. positional embeds
+'''
+postional encoding gives a unique address to an token in each sentence
+tho it doesnt specify whcih sentence its in due to 'computation efficiency'
+for the input shape (batch,seq length, d_model)
+the pe is (1,seq length, d_model)
+it just gets broadcasted to all batches
+'''
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, seq_len, dropout):
         super().__init__()
@@ -32,7 +52,8 @@ class PositionalEncoding(nn.Module):
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-
+        ''' using pos,i to generate different frequencies for each position
+        lower freq correspoind to lower positions '''
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
@@ -41,9 +62,8 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-# -----------------------------
-# Multi-Head Attention
-# -----------------------------
+# 3. multihead attention
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, h, dropout):
         super().__init__()
