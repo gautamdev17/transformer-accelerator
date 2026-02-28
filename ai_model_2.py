@@ -22,7 +22,7 @@ class InputEmbeddings(nn.Module):
     def forward(self, x):
         return self.embedding(x) * math.sqrt(self.d_model)
         ''' in the attention paper it was cited: In the embedding layers, we multiply those weights by
-        √dmodel, for stability
+        √dmodel, for dominance of these embeds over positions
         embedding shape: (batch size, sequence lenght, dimension(of each vector))
         also refered to harvard nlp annotated transformer
         
@@ -38,6 +38,12 @@ tho it doesnt specify whcih sentence its in due to 'computation efficiency'
 for the input shape (batch,seq length, d_model)
 the pe is (1,seq length, d_model)
 it just gets broadcasted to all batches
+
+segment addressing was in the bert model which i saw
+but attention paper positional encoding only answered
+where is this token inside its own sequence?
+not
+which batch sample is this?
 '''
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, seq_len, dropout):
@@ -63,7 +69,10 @@ class PositionalEncoding(nn.Module):
 
 
 # 3. multihead attention
-
+'''
+now we have embeddings with input embeds + positional embeds of shape (B,S,D)
+now we have to convert static embeds to context aware embeds
+'''
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, h, dropout):
         super().__init__()
@@ -71,8 +80,11 @@ class MultiHeadAttention(nn.Module):
 
         self.d_model = d_model
         self.h = h
-        self.d_k = d_model // h
+        self.d_k = d_model // h #checking if dimension is divisible by number of heads
 
+        ''' each weight matrix is of size (D,D) , so matrix multiplication of input * weight will be like
+        (B,S,D) * (D,D) = (B,S,D)
+        training query key value matrices (512,512) '''
         self.w_q = nn.Linear(d_model, d_model)
         self.w_k = nn.Linear(d_model, d_model)
         self.w_v = nn.Linear(d_model, d_model)
@@ -101,24 +113,33 @@ class MultiHeadAttention(nn.Module):
         return self.w_o(x)
 
 
-# -----------------------------
-# Feed Forward Network
-# -----------------------------
+# 3. feed forward
+''' now we have contextually rich embdeds, of shape (B,S,D)
+now this ffn processes each token independently'''
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff, dropout):
         super().__init__()
-        self.linear1 = nn.Linear(d_model, d_ff)
-        self.linear2 = nn.Linear(d_ff, d_model)
+        self.linear1 = nn.Linear(d_model, d_ff) # expand dims to d_ff, u can get more expressive tokens
+        self.linear2 = nn.Linear(d_ff, d_model) # project back to orgnal
         self.dropout = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU() # adds some non lineariy
 
     def forward(self, x):
         return self.linear2(self.dropout(self.relu(self.linear1(x))))
 
+'''
+transformations in this blokc:
+ linear1----> (B,S,D) * (D,D_ff) = (B,S,D_ff)
+ then relu unit
+ linear2----> (B,S,D_ff) * (D_ff,D) = (B,S,D)
+ dropout----> (B,S,D)
 
-# -----------------------------
-# Encoder Block
-# -----------------------------
+ accelerator view: 2 matrix multipliers, relu unit
+'''
+
+
+# 4. encoder block
+# here we do the full flow input->attention->
 class EncoderBlock(nn.Module):
     def __init__(self, d_model, h, d_ff, dropout):
         super().__init__()
