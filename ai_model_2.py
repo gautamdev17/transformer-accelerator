@@ -139,7 +139,27 @@ transformations in this blokc:
 
 
 # 4. encoder block
-# here we do the full flow input->attention->
+''' here we do the full flow input->attention->add&norm->ffn->add&norm->output
+ 'add' in add&norm is the residual connection so that attention blocks dont forget the orignal input vectors
+ hardeware wise its just vector add, norm will be just scale and shift
+ attention will haave 4 linear layers, q,k,v,o and ffn has 2 linear layers
+ sonthis block needs heavy compute units
+1. q projection: (B,S,D) * (D,D) = (B,S,D)
+2. k projection: (B,S,D) * (D,D) = (B,S,D)
+3. v projection: (B,S,D) * (D,D) = (B,S,D)
+4. attention: (B,S,D) * (B,D,S) = (B,S,S)
+5. output: (B,S,S) * (B,S,D) = (B,S,D)
+6. add&norm: (B,S,D) + (B,S,D) = (B,S,D)
+7. ffn: (B,S,D) * (D,D_ff) = (B,S,D_ff)
+8. relu: (B,S,D_ff)
+9. ffn: (B,S,D_ff) * (D_ff,D) = (B,S,D)
+10. add&norm: (B,S,D) + (B,S,D) = (B,S,D)
+11. output: (B,S,D)
+
+inference: each encoder block corrrespond to 6 linear transformations
+
+ '''
+
 class EncoderBlock(nn.Module):
     def __init__(self, d_model, h, d_ff, dropout):
         super().__init__()
@@ -155,10 +175,13 @@ class EncoderBlock(nn.Module):
         x = self.norm2(x + self.dropout(self.ff(x)))
         return x
 
+# look into time complexity too , dont forget
 
-# -----------------------------
-# Transformer Encoder
-# -----------------------------
+# 5. transformer block
+
+'''
+so here if 6 encoder blocks, 6x6 linear transformations
+'''
 class TransformerEncoder(nn.Module):
     def __init__(self, vocab_size, seq_len,
                  d_model=512, N=6, h=8, d_ff=2048, dropout=0.1):
@@ -184,9 +207,7 @@ class TransformerEncoder(nn.Module):
         return self.norm(x)
 
 
-# -----------------------------
-# Test Run
-# -----------------------------
+#test run
 if __name__ == "__main__":
     model = TransformerEncoder(vocab_size=10000, seq_len=20)
 
