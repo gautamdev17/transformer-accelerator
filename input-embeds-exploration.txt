@@ -1,0 +1,28 @@
+2-3-2026
+
+
+tinyshakespeare: https://github.com/karpathy/char-rnn/blob/master/data/tinyshakespeare/input.txt
+
+use this for testing, next word predictor
+
+we can translate each of the word into a token index using openai word2vec
+
+openai tokenizer api: https://platform.openai.com/tokenizer
+
+this will give token index of their trained (vocab,dim) matrix
+
+get the trained matrix from:
+
+from transformers import GPT2Model
+model = GPT2Model.from_pretrained("gpt2")
+
+model.wte.weight.shape
+torch.Size([50257, 768])
+
+now use token index to get each embed of dim 768
+
+say 'Hello' = 13225
+
+now its vector will be model.wte.weight[13225]
+
+need to validate whether (openai tokenizer == gpt2 matrix)???
