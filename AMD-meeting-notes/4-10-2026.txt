@@ -1,1 +1,4 @@
-9:30 PM
+10:04 PM
+talked about two main ideas
+1. integer-only softmax, lossless energy efficient computation
+2. packed mixed precision weights, 8/4/2 based on layer sensitivity can be done using algorithm methods like haq
