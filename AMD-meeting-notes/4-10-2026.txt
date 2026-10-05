@@ -2,3 +2,8 @@
 talked about two main ideas
 1. integer-only softmax, lossless energy efficient computation
 2. packed mixed precision weights, 8/4/2 based on layer sensitivity can be done using algorithm methods like haq
+
+need to present slides to binsu maam
+first task is to algorithmically prove these and show if its worth moving to hw
+
+for reference check out Beyond_MPTRANS_Research_Proposal.pdf
